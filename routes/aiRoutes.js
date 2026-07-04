@@ -4,6 +4,8 @@ require("express");
 const router =
 express.Router();
 
+const authMiddleware =
+require("../middleware/authMiddleware");
 const {
   generateConsent
 } =
@@ -13,6 +15,7 @@ require(
 
 router.post(
   "/generate-consent",
+  authMiddleware,
   generateConsent
 );
 

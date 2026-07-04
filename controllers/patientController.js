@@ -3,9 +3,9 @@ require("../config/db");
 
 exports.createPatient =
 async (req, res) => {
+  console.log("req.user =", req.user);
   try {
-    const {
-  surgeon_id,
+   const {
   full_name,
   age,
   gender,
@@ -19,6 +19,8 @@ async (req, res) => {
   notes
 } = req.body;
 
+const surgeon_id = req.user.id;
+console.log("req.user =", req.user);
     const result =
 await pool.query(
 `
@@ -65,24 +67,27 @@ RETURNING *
     );
 
   } catch (err) {
-    console.log(err);
+  console.log("PATIENT ERROR:");
+  console.log(err);
 
-    res.status(500).json({
-      message:
-      "Server Error"
-    });
-  }
+  res.status(500).json({
+    error: err.message
+  });
+}
 };
 exports.getPatients =
 async (req, res) => {
   try {
+
     const result =
       await pool.query(
         `
         SELECT *
         FROM patients
-        ORDER BY id DESC
-        `
+        WHERE surgeon_id = $1
+        ORDER BY created_at DESC
+        `,
+        [req.user.id]
       );
 
     res.json(
@@ -94,7 +99,7 @@ async (req, res) => {
 
     res.status(500).json({
       message:
-      "Server Error"
+        "Server Error"
     });
   }
 };
@@ -103,18 +108,34 @@ exports.deletePatient =
 async (req, res) => {
   try {
 
-    await pool.query(
-      `
-      DELETE
-      FROM patients
-      WHERE id=$1
-      `,
-      [req.params.id]
-    );
+    const result =
+      await pool.query(
+        `
+        DELETE
+        FROM patients
+        WHERE
+        id=$1
+        AND surgeon_id=$2
+        RETURNING *
+        `,
+        [
+          req.params.id,
+          req.user.id
+        ]
+      );
+
+    if (
+      result.rows.length === 0
+    ) {
+      return res.status(404).json({
+        message:
+          "Patient not found"
+      });
+    }
 
     res.json({
       message:
-      "Patient Deleted"
+        "Patient Deleted"
     });
 
   } catch (err) {
@@ -122,11 +143,10 @@ async (req, res) => {
 
     res.status(500).json({
       message:
-      "Server Error"
+        "Server Error"
     });
   }
 };
-
 exports.updatePatient =
 async (req,res) => {
 
@@ -162,8 +182,10 @@ async (req,res) => {
       side=$9,
       suggested_procedure=$10,
       notes=$11
-      WHERE id=$12
-      RETURNING *
+      WHERE
+      id=$12
+       AND surgeon_id=$13
+       RETURNING *
       `,
       [
         full_name,
@@ -177,7 +199,8 @@ async (req,res) => {
         side,
         suggested_procedure,
         notes,
-        req.params.id
+        req.params.id,
+        req.user.id
       ]
     );
 

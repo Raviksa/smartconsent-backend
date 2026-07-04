@@ -1,6 +1,9 @@
 const express = require("express");
 const router = express.Router();
 
+const authMiddleware =
+require("../middleware/authMiddleware");
+
 const {
   createPatient,
   getPatients,
@@ -10,21 +13,25 @@ const {
 
 router.post(
   "/",
+  authMiddleware,
   createPatient
 );
 
 router.get(
   "/",
+  authMiddleware,
   getPatients
 );
 
 router.delete(
   "/:id",
+  authMiddleware,
   deletePatient
 );
 
 router.put(
   "/:id",
+  authMiddleware,
   updatePatient
 );
 
