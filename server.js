@@ -6,16 +6,8 @@ require(
 const express = require("express");
 const cors = require("cors");
 
-console.log(
-  "DB_USER:",
-  process.env.DB_USER
-);
 
-console.log(
-  "DB_PASSWORD:",
-  process.env.DB_PASSWORD
-);
-console.log(process.env);
+
 const pool = require("./config/db");
 const authRoutes = require("./routes/authRoutes");
 
