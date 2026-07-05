@@ -50,7 +50,10 @@ app.use(
   "/api/pdf",
   pdfRoutes
 );
-
+app.use(
+  "/api/dashboard",
+  require("./routes/dashboardRoutes")
+);
 // Test Route
 app.get("/", (req, res) => {
   res.send("SmartConsent Backend Running");

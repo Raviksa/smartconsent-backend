@@ -1,6 +1,6 @@
 const path = require("path");
 const PDFDocument = require("pdfkit");
-
+const pool = require("../config/db");
 exports.generatePdf =
 async (req, res) => {
 
@@ -12,7 +12,28 @@ async (req, res) => {
       consent,
       illustrations
     } = req.body;
+    await pool.query(
+`
+INSERT INTO consents
+(
+  surgeon_id,
+  patient_id,
+  procedure_id,
+  consent_text,
+  status
+)
+VALUES
+($1,$2,$3,$4,$5)
+`,
+[
+  req.user.id,
+  patient.id,
+  procedure.id,
+  consent,
+  "Completed"
+]
 
+);
     const doc =
       new PDFDocument({
         margin: 50
