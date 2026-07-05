@@ -2,9 +2,8 @@ const pool =
 require("../config/db");
 
 exports.getStats =
-async (req,res)=>{
-
-  try{
+async (req, res) => {
+  try {
 
     const surgeonId =
       req.user.id;
@@ -42,13 +41,53 @@ async (req,res)=>{
         )
     });
 
-  }catch(err){
+  } catch (err) {
 
     console.log(err);
 
     res.status(500).json({
       message:
-      "Server Error"
+        "Server Error"
+    });
+  }
+};
+
+exports.getRecentConsents =
+async (req, res) => {
+  try {
+
+    const result =
+      await pool.query(
+        `
+        SELECT
+          c.id,
+          p.full_name,
+          pr.name AS procedure_name,
+          c.status,
+          c.created_at
+        FROM consents c
+        JOIN patients p
+          ON c.patient_id = p.id
+        LEFT JOIN procedures pr
+          ON c.procedure_id = pr.id
+        WHERE c.surgeon_id = $1
+        ORDER BY c.created_at DESC
+        LIMIT 5
+        `,
+        [req.user.id]
+      );
+
+    res.json(
+      result.rows
+    );
+
+  } catch (err) {
+
+    console.log(err);
+
+    res.status(500).json({
+      message:
+        "Server Error"
     });
   }
 };

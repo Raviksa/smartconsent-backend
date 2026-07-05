@@ -8,7 +8,8 @@ const authMiddleware =
 require("../middleware/authMiddleware");
 
 const {
-  getStats
+  getStats,
+  getRecentConsents
 } =
 require("../controllers/dashboardController");
 
@@ -16,6 +17,12 @@ router.get(
   "/stats",
   authMiddleware,
   getStats
+);
+
+router.get(
+  "/recent-consents",
+  authMiddleware,
+  getRecentConsents
 );
 
 module.exports =
