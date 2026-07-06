@@ -39,7 +39,30 @@ VALUES
       new PDFDocument({
         margin: 50
       });
+doc.registerFont(
+  "English",
+  path.join(__dirname,"../fonts/NotoSans-Regular.ttf")
+);
 
+doc.registerFont(
+  "EnglishBold",
+  path.join(__dirname,"../fonts/NotoSans-Bold.ttf")
+);
+
+doc.registerFont(
+  "Devanagari",
+  path.join(__dirname,"../fonts/NotoSansDevanagari-Regular.ttf")
+);
+
+doc.registerFont(
+  "Gujarati",
+  path.join(__dirname,"../fonts/NotoSansGujarati-Regular.ttf")
+);
+
+doc.registerFont(
+  "Tamil",
+  path.join(__dirname,"../fonts/NotoSansTamil-Regular.ttf")
+);
     res.setHeader(
       "Content-Type",
       "application/pdf"
@@ -80,7 +103,32 @@ VALUES
       .text(
         `Patient Name: ${patient.full_name}`
       );
+let fontName = "English";
 
+if (
+  consent.match(/[\u0900-\u097F]/)
+) {
+  fontName = "Devanagari";
+}
+else if (
+  consent.match(/[\u0A80-\u0AFF]/)
+) {
+  fontName = "Gujarati";
+}
+else if (
+  consent.match(/[\u0B80-\u0BFF]/)
+) {
+  fontName = "Tamil";
+}
+
+doc.font(fontName);
+
+doc.text(
+  consent,
+  {
+    align: "left"
+  }
+);
     doc.text(
       `Age: ${patient.age}`
     );
