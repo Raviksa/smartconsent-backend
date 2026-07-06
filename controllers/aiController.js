@@ -1,13 +1,11 @@
+
 require("dotenv").config();
 const {
   GoogleGenerativeAI
 } = require(
   "@google/generative-ai"
 );
-console.log(
-  "Gemini Key:",
-  process.env.GEMINI_API_KEY
-);
+
 const genAI =
 new GoogleGenerativeAI(
   process.env.GEMINI_API_KEY
@@ -15,6 +13,9 @@ new GoogleGenerativeAI(
 
 exports.generateConsent =
 async (req, res) => {
+ console.log(
+    "🔥 AI CONTROLLER HIT"
+  );
 
   try {
 
@@ -22,7 +23,8 @@ async (req, res) => {
       patient,
       procedure,
       risks,
-      instructions
+      instructions,
+      language
     } = req.body;
 
     const model =
@@ -33,8 +35,11 @@ const riskText =
   risks.length > 0
     ? risks.map(r => `- ${r}`).join("\n")
     : "None specified";
+
 const prompt = `
 You are assisting a surgeon in creating a DRAFT informed consent document for patient education.
+
+
 
 IMPORTANT RULES:
 - Use ONLY the information provided below.
@@ -82,29 +87,81 @@ At the end add the following statement:
 
 "This document is an AI-generated draft prepared as an educational and documentation aid. The final informed consent must be reviewed, modified if necessary, and approved by the treating surgeon before use."
 
-Do not include fictional details, placeholders, or assumptions.
+`;
+console.log("====== LANGUAGE ======");
+console.log(language);
+
+console.log("====== PROMPT ======");
+console.log(prompt);
+console.log("Selected language:", language);
+const englishResult =
+  await model.generateContent(
+    prompt
+  );
+
+const englishConsent =
+  englishResult.response.text();
+
+let finalConsent =
+  englishConsent;
+
+// Translate if required
+
+if (language !== "English") {
+console.log("✅ Translation block entered");
+  const translationPrompt = `
+Translate the following informed consent into ${language}.
+
+Requirements:
+
+- Translate the ENTIRE document.
+- Preserve every heading.
+- Preserve every paragraph.
+- Preserve every declaration.
+- Preserve the AI disclaimer.
+- Do NOT summarize.
+- Do NOT add new information.
+- Do NOT remove information.
+- Use simple language understandable by patients.
+
+Document:
+
+${englishConsent}
 `;
 
-    const result =
-      await model.generateContent(
-        prompt
-      );
+  const translationResult =
+    await model.generateContent(
+      translationPrompt
+    );
 
-    const text =
-      result.response.text();
+  const translatedConsent =
+    translationResult.response.text();
 
-    res.json({
-      consent:
-        text
-    });
+  finalConsent =
 
-  } catch (err) {
+`========================
+ENGLISH VERSION
+========================
 
-    console.log(err);
+${englishConsent}
 
-    res.status(500).json({
-      message:
-        "AI Error"
-    });
-  }
+========================
+${language.toUpperCase()} VERSION
+========================
+
+${translatedConsent}`;
+
+}
+
+res.json({
+  consent: finalConsent
+});
+} catch (err) {
+
+  console.log(err);
+
+  res.status(500).json({
+    message: "AI Error"
+  });
+}
 };
