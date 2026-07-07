@@ -1,4 +1,5 @@
 const puppeteer = require("puppeteer");
+const fs = require("fs");
 const pool = require("../config/db");
 const {
   createConsentHTML
@@ -106,7 +107,25 @@ const html = createConsentHTML({
     // -----------------------------
 
    console.log("Resolved executable:", puppeteer.executablePath());
+console.log("================================");
+console.log("Puppeteer executable:", puppeteer.executablePath());
 
+console.log(
+  "Chrome exists:",
+  fs.existsSync("/usr/bin/google-chrome-stable")
+);
+
+console.log(
+  "Chromium exists:",
+  fs.existsSync("/usr/bin/chromium")
+);
+
+console.log(
+  "Chromium-browser exists:",
+  fs.existsSync("/usr/bin/chromium-browser")
+);
+
+console.log("================================");
 const browser = await puppeteer.launch({
   executablePath: "/usr/bin/google-chrome-stable",
   headless: true,
