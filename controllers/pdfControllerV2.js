@@ -106,26 +106,10 @@ const html = createConsentHTML({
     // Launch Browser
     // -----------------------------
 
-   console.log("Resolved executable:", await puppeteer.executablePath());
-console.log("================================");
-console.log("Puppeteer executable:", puppeteer.executablePath());
+  
 
-console.log(
-  "Chrome exists:",
-  fs.existsSync("/usr/bin/google-chrome-stable")
-);
 
-console.log(
-  "Chromium exists:",
-  fs.existsSync("/usr/bin/chromium")
-);
 
-console.log(
-  "Chromium-browser exists:",
-  fs.existsSync("/usr/bin/chromium-browser")
-);
-
-console.log("================================");
  browser = await puppeteer.launch({
   
   headless: true,
