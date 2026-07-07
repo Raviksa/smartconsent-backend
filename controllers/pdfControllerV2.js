@@ -106,7 +106,7 @@ const html = createConsentHTML({
     // Launch Browser
     // -----------------------------
 
-   console.log("Resolved executable:", puppeteer.executablePath());
+   console.log("Resolved executable:", await puppeteer.executablePath());
 console.log("================================");
 console.log("Puppeteer executable:", puppeteer.executablePath());
 
@@ -126,8 +126,8 @@ console.log(
 );
 
 console.log("================================");
-const browser = await puppeteer.launch({
-  executablePath: "/usr/bin/google-chrome-stable",
+ browser = await puppeteer.launch({
+  
   headless: true,
   args: [
     "--no-sandbox",
