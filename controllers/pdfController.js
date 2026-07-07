@@ -1,9 +1,8 @@
 const path = require("path");
 const PDFDocument = require("pdfkit");
 const pool = require("../config/db");
-exports.generatePdf =
-async (req, res) => {
- 
+
+exports.generatePdf = async (req, res) => {
 
   try {
 
@@ -11,58 +10,42 @@ async (req, res) => {
       patient,
       procedure,
       consent,
-      illustrations
+      illustrations,
+      language
     } = req.body;
+
+    // Save consent to database
     await pool.query(
-`
-INSERT INTO consents
-(
-  surgeon_id,
-  patient_id,
-  procedure_id,
-  consent_text,
-  status
-)
-VALUES
-($1,$2,$3,$4,$5)
-`,
-[
-  req.user.id,
-  patient.id,
-  procedure.id,
-  consent,
-  "Completed"
-]
+      `
+      INSERT INTO consents
+      (
+        surgeon_id,
+        patient_id,
+        procedure_id,
+        consent_text,
+        status
+      )
+      VALUES
+      ($1,$2,$3,$4,$5)
+      `,
+      [
+        req.user.id,
+        patient.id,
+        procedure.id,
+        consent,
+        "Completed"
+      ]
+    );
 
-);
-    const doc =
-      new PDFDocument({
-        margin: 50
-      });
-doc.registerFont(
-  "English",
-  path.join(__dirname,"../fonts/NotoSans-Regular.ttf")
-);
+    // ---------------------------------
+    // Create PDF
+    // ---------------------------------
 
-doc.registerFont(
-  "EnglishBold",
-  path.join(__dirname,"../fonts/NotoSans-Bold.ttf")
-);
+    const doc = new PDFDocument({
+      margin: 50,
+      size: "A4"
+    });
 
-doc.registerFont(
-  "Devanagari",
-  path.join(__dirname,"../fonts/NotoSansDevanagari-Regular.ttf")
-);
-
-doc.registerFont(
-  "Gujarati",
-  path.join(__dirname,"../fonts/NotoSansGujarati-Regular.ttf")
-);
-
-doc.registerFont(
-  "Tamil",
-  path.join(__dirname,"../fonts/NotoSansTamil-Regular.ttf")
-);
     res.setHeader(
       "Content-Type",
       "application/pdf"
@@ -75,12 +58,87 @@ doc.registerFont(
 
     doc.pipe(res);
 
-    // ==================================
+    // ---------------------------------
+    // Register Fonts
+    // ---------------------------------
+
+    doc.registerFont(
+      "English",
+      path.join(__dirname, "../fonts/NotoSans-Regular.ttf")
+    );
+
+    doc.registerFont(
+      "EnglishBold",
+      path.join(__dirname, "../fonts/NotoSans-Bold.ttf")
+    );
+
+    doc.registerFont(
+      "Devanagari",
+      path.join(__dirname, "../fonts/NotoSansDevanagari-Regular.ttf")
+    );
+    doc.registerFont(
+      "Tamil",
+      path.join(__dirname, "../fonts/NotoSansTamil-Regular.ttf")
+    );
+
+    doc.registerFont(
+      "Gujarati",
+      path.join(__dirname, "../fonts/NotoSansGujarati-Regular.ttf")
+    );
+
+    
+    // ---------------------------------
+    // Clean markdown
+    // ---------------------------------
+
+    const cleanConsent = consent
+      .replace(/\*\*/g, "")
+      .replace(/^\*\s/gm, "• ")
+      .replace(/\\_/g, "_");
+
+    // ---------------------------------
+    // Split English / Regional
+    // ---------------------------------
+
+    let englishConsent = cleanConsent;
+    let regionalConsent = "";
+
+    if (language !== "English") {
+
+      const parts =
+        cleanConsent.split(
+          "========================"
+        );
+
+      if (parts.length >= 5) {
+
+        englishConsent = parts[2].trim();
+
+        regionalConsent = parts[4].trim();
+
+      }
+
+    }
+
+    // ---------------------------------
     // PAGE 1
-    // ==================================
+    // ---------------------------------
 
     doc
+      .font("EnglishBold")
       .fontSize(22)
+      .text(
+        "SMARTCONSENT SOLUTIONS",
+        {
+          align: "center"
+        }
+      );
+
+    doc.moveDown(0.5);
+
+    doc
+      .font("EnglishBold")
+      .fontSize(18)
       .text(
         "INFORMED CONSENT",
         {
@@ -91,75 +149,29 @@ doc.registerFont(
     doc.moveDown(2);
 
     doc
+      .font("EnglishBold")
       .fontSize(16)
-      .text(
-        "Patient Information"
-      );
+      .text("Patient Information");
 
     doc.moveDown();
 
     doc
-      .fontSize(12)
-      .text(
-        `Patient Name: ${patient.full_name}`
-      );
-let fontName = "English";
+      .font("English")
+      .fontSize(12);
 
-if (
-  consent.match(/[\u0900-\u097F]/)
-) {
-  fontName = "Devanagari";
-}
-else if (
-  consent.match(/[\u0A80-\u0AFF]/)
-) {
-  fontName = "Gujarati";
-}
-else if (
-  consent.match(/[\u0B80-\u0BFF]/)
-) {
-  fontName = "Tamil";
-}
-
-doc.font(fontName);
-
-doc.text(
-  consent,
-  {
-    align: "left"
-  }
-);
-    doc.text(
-      `Age: ${patient.age}`
-    );
+    doc.text(`Patient Name : ${patient.full_name}`);
+    doc.text(`Age          : ${patient.age}`);
+    doc.text(`Gender       : ${patient.gender || "Not Specified"}`);
+    doc.text(`Diagnosis    : ${patient.diagnosis}`);
+    doc.text(`Procedure    : ${procedure.name}`);
 
     doc.text(
-      `Gender: ${
-        patient.gender ||
-        "Not Specified"
-      }`
+      `Date         : ${new Date().toLocaleDateString()}`
     );
-
-    doc.text(
-      `Diagnosis: ${patient.diagnosis}`
-    );
-
-    doc.text(
-      `Procedure: ${procedure.name}`
-    );
-
-    doc.moveDown(2);
-
-    doc.text(
-      `Date: ${
-        new Date()
-          .toLocaleDateString()
-      }`
-    );
-
-    // ==================================
+        // ---------------------------------
     // PAGE 2
-    // ==================================
+    // Procedure Illustrations
+    // ---------------------------------
 
     if (
       illustrations &&
@@ -169,54 +181,45 @@ doc.text(
       doc.addPage();
 
       doc
+        .font("EnglishBold")
         .fontSize(20)
         .text(
           "Procedure Illustrations",
           {
-            align:
-              "center"
+            align: "center"
           }
         );
 
       doc.moveDown(2);
 
-      for (
-        const illustration
-        of illustrations
-      ) {
+      for (const illustration of illustrations) {
 
         try {
 
-          const imagePath =
-            path.join(
-              __dirname,
-              "..",
-              "public",
-              illustration.image_url.replace(
-                /^\/+/,
-                ""
-              )
-            );
+          const imagePath = path.join(
+            __dirname,
+            "..",
+            "public",
+            illustration.image_url.replace(/^\/+/, "")
+          );
 
           doc.image(
             imagePath,
             {
-              fit:
-                [300, 200],
-              align:
-                "center"
+              fit: [350, 250],
+              align: "center"
             }
           );
 
           doc.moveDown();
 
           doc
+            .font("English")
             .fontSize(12)
             .text(
               illustration.caption,
               {
-                align:
-                  "center"
+                align: "center"
               }
             );
 
@@ -225,102 +228,202 @@ doc.text(
         } catch (err) {
 
           console.log(
-            "Image error:",
+            "Unable to load illustration:",
             illustration.image_url
           );
 
-          console.log(err);
         }
+
       }
+
     }
 
-    // ==================================
-    // PAGE 3+
-    // ==================================
+    // ---------------------------------
+    // PAGE 3
+    // English Consent
+    // ---------------------------------
 
     doc.addPage();
 
     doc
+      .font("EnglishBold")
       .fontSize(20)
       .text(
-        "Consent Document",
+        "Consent Document (English)",
         {
-          align:
-            "center"
+          align: "center"
         }
       );
 
     doc.moveDown(2);
 
     doc
+      .font("English")
       .fontSize(11)
       .text(
-        consent,
+        englishConsent,
         {
-          align:
-            "left"
+          align: "left"
         }
       );
 
-    // ==================================
-    // SIGNATURE PAGE
-    // ==================================
+    // ---------------------------------
+    // PAGE 4
+    // Regional Language
+    // ---------------------------------
+
+    if (
+      language !== "English" &&
+      regionalConsent.trim() !== ""
+    ) {
+     
+      doc.addPage();
+
+      let regionalFont = "English";
+
+      switch (language) {
+
+        case "Marathi":
+        case "Hindi":
+          regionalFont = "Devanagari";
+          break;
+
+        case "Gujarati":
+          regionalFont = "Gujarati";
+          break;
+
+        case "Tamil":
+          regionalFont = "Tamil";
+          break;
+
+      }
+      console.log("Language:", language);
+console.log("Regional Font:", regionalFont)
+
+      doc
+        .font("EnglishBold")
+        .fontSize(20)
+        .text(
+          `Consent Document (${language})`,
+          {
+            align: "center"
+          }
+        );
+
+      doc.moveDown(2);
+
+      doc
+        .font(regionalFont)
+        .fontSize(11)
+        .text(
+          regionalConsent,
+          {
+            align: "left"
+          }
+        );
+
+    }
+        // ---------------------------------
+    // FINAL PAGE
+    // Signatures
+    // ---------------------------------
 
     doc.addPage();
 
     doc
+      .font("EnglishBold")
       .fontSize(20)
       .text(
         "Signatures",
         {
-          align:
-            "center"
+          align: "center"
         }
       );
 
+    doc.moveDown(3);
+
+    doc
+      .font("English")
+      .fontSize(12);
+
+    // Patient Signature
+
+    doc.text("Patient Signature");
+
+    doc.moveTo(180, doc.y)
+       .lineTo(500, doc.y)
+       .stroke();
+
+    doc.moveDown(2);
+
+    // Relative Signature
+
+    doc.text("Relative Signature");
+
+    doc.moveTo(180, doc.y)
+       .lineTo(500, doc.y)
+       .stroke();
+
+    doc.moveDown(2);
+
+    // Witness Signature
+
+    doc.text("Witness Signature");
+
+    doc.moveTo(180, doc.y)
+       .lineTo(500, doc.y)
+       .stroke();
+
+    doc.moveDown(2);
+
+    // Surgeon Signature
+
+    doc.text("Surgeon Signature");
+
+    doc.moveTo(180, doc.y)
+       .lineTo(500, doc.y)
+       .stroke();
+
+    doc.moveDown(3);
+
+    doc.text(
+      `Date : ${new Date().toLocaleDateString()}`
+    );
+
+    doc.text(
+      "Time : __________________"
+    );
+
     doc.moveDown(4);
 
-    doc.text(
-      "Patient Signature:"
-    );
+    doc
+      .fontSize(9)
+      .fillColor("gray")
+      .text(
+        "This document is an AI-generated draft intended as an educational and documentation aid. The final informed consent must be reviewed, modified if necessary, and approved by the treating surgeon before clinical use.",
+        {
+          align: "center"
+        }
+      );
 
-    doc.moveDown(3);
-
-    doc.text(
-      "Relative Signature:"
-    );
-
-    doc.moveDown(3);
-
-    doc.text(
-      "Witness Signature:"
-    );
-
-    doc.moveDown(3);
-
-    doc.text(
-      "Surgeon Signature:"
-    );
-
-    doc.moveDown(3);
-
-    doc.text(
-      "Date: __________________"
-    );
-
-    doc.text(
-      "Time: __________________"
-    );
+    // ---------------------------------
+    // Finish PDF
+    // ---------------------------------
 
     doc.end();
 
   } catch (err) {
 
-    console.log(err);
+    console.error(err);
 
-    res.status(500).json({
-      message:
-        "PDF Error"
-    });
+    if (!res.headersSent) {
+
+      res.status(500).json({
+        message: "PDF Error"
+      });
+
+    }
+
   }
+
 };

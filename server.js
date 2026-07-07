@@ -28,6 +28,7 @@ const pdfRoutes =
 require(
   "./routes/pdfRoutes"
 );
+const path = require("path");
 // Middleware
 app.use(cors());
 app.use(express.json());
@@ -41,6 +42,12 @@ patientRoutes
 app.use(
   "/api/procedure-illustrations",
   procedureIllustrationRoutes
+);
+app.use(
+  "/images",
+  express.static(
+    path.join(__dirname, "public/images")
+  )
 );
 app.use(
   "/api/ai",
