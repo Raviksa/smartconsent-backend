@@ -107,11 +107,13 @@ const html = createConsentHTML({
 
    console.log("Resolved executable:", puppeteer.executablePath());
 
-browser = await puppeteer.launch({
+const browser = await puppeteer.launch({
+  executablePath: "/usr/bin/google-chrome-stable",
   headless: true,
   args: [
     "--no-sandbox",
-    "--disable-setuid-sandbox"
+    "--disable-setuid-sandbox",
+    "--disable-dev-shm-usage"
   ]
 });
     const page =
