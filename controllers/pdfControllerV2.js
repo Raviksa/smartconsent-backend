@@ -105,17 +105,18 @@ const html = createConsentHTML({
     // Launch Browser
     // -----------------------------
 
-    browser =
-      await puppeteer.launch({
+   browser = await puppeteer.launch({
+  headless: true,
 
-        headless: true,
+  executablePath:
+    process.env.PUPPETEER_EXECUTABLE_PATH ||
+    "/opt/render/.cache/puppeteer/chrome/linux-150.0.7871.24/chrome-linux64/chrome",
 
-        args: [
-          "--no-sandbox",
-          "--disable-setuid-sandbox"
-        ]
-
-      });
+  args: [
+    "--no-sandbox",
+    "--disable-setuid-sandbox"
+  ]
+});
 
     const page =
       await browser.newPage();
@@ -131,7 +132,10 @@ const html = createConsentHTML({
     // -----------------------------
     // Generate PDF
     // -----------------------------
-
+    console.log(
+  "Chrome path:",
+  process.env.PUPPETEER_EXECUTABLE_PATH
+);
     const pdf =
       await page.pdf({
 
