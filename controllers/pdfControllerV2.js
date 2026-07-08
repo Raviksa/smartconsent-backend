@@ -1,4 +1,4 @@
-const puppeteer = require("puppeteer");
+const { chromium } = require("playwright");
 const fs = require("fs");
 const pool = require("../config/db");
 const {
@@ -110,33 +110,43 @@ const html = createConsentHTML({
 
 
 
- browser = await puppeteer.launch({
-  
-  headless: true,
-  args: [
-    "--no-sandbox",
-    "--disable-setuid-sandbox",
-    "--disable-dev-shm-usage"
-  ]
+ const browser = await chromium.launch({
+  headless: true
 });
-    const page =
-      await browser.newPage();
 
-    await page.setContent(
-      html,
-      {
-        waitUntil:
-          "networkidle0"
-      }
-    );
+const page = await browser.newPage();
 
+await page.setContent(html, {
+  waitUntil: "networkidle"
+});
+
+const pdf = await page.pdf({
+  format: "A4",
+  printBackground: true,
+  margin: {
+    top: "20mm",
+    bottom: "20mm",
+    left: "20mm",
+    right: "20mm"
+  }
+});
+
+await browser.close();
+
+res.setHeader("Content-Type", "application/pdf");
+res.setHeader(
+  "Content-Disposition",
+  "attachment; filename=Consent.pdf"
+);
+
+
+
+res.send(pdf);
+return;
     // -----------------------------
     // Generate PDF
     // -----------------------------
-    console.log(
-  "Chrome path:",
-  process.env.PUPPETEER_EXECUTABLE_PATH
-);
+
     const pdf =
       await page.pdf({
 

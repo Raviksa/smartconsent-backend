@@ -9,7 +9,7 @@ const {
   generatePdf
 } =
 require(
-  "../controllers/pdfControllerV2"
+  "../controllers/pdfController"
 );
 
 router.post(

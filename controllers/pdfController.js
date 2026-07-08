@@ -1,6 +1,7 @@
 const path = require("path");
 const PDFDocument = require("pdfkit");
 const pool = require("../config/db");
+const { splitConsent } = require("../helpers/splitConsent");
 
 exports.generatePdf = async (req, res) => {
 
@@ -83,7 +84,7 @@ exports.generatePdf = async (req, res) => {
 
     doc.registerFont(
       "Gujarati",
-      path.join(__dirname, "../fonts/NotoSansGujarati-Regular.ttf")
+      path.join(__dirname, "../fonts/MuktaVaani-Regular.ttf")
     );
 
     
@@ -100,25 +101,13 @@ exports.generatePdf = async (req, res) => {
     // Split English / Regional
     // ---------------------------------
 
-    let englishConsent = cleanConsent;
-    let regionalConsent = "";
-
-    if (language !== "English") {
-
-      const parts =
-        cleanConsent.split(
-          "========================"
-        );
-
-      if (parts.length >= 5) {
-
-        englishConsent = parts[2].trim();
-
-        regionalConsent = parts[4].trim();
-
-      }
-
-    }
+    const {
+    englishConsent,
+    regionalConsent
+} = splitConsent(
+    cleanConsent,
+    language
+);
 
     // ---------------------------------
     // PAGE 1
