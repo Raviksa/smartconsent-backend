@@ -237,11 +237,11 @@ for (let i = 0; i < leftColumn.length; i++) {
 
   doc
     .font("EnglishBold")
-    .text(right[0], 310, startY);
+    .text(right[0], 350, startY);
 
   doc
     .font("English")
-    .text(`: ${right[1]}`, 390, startY);
+    .text(`: ${right[1]}`, 450, startY);
 
   startY += 24;
 

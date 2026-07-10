@@ -23,6 +23,9 @@ async (req, res) => {
       patient,
       procedure,
       risks,
+      surgicalTechniques,
+      patientComplexity,
+      perioperativeCare,
       instructions,
       language
     } = req.body;
@@ -36,6 +39,20 @@ const riskText =
     ? risks.map(r => `- ${r}`).join("\n")
     : "None specified";
 
+const techniqueText =
+  surgicalTechniques.length > 0
+    ? surgicalTechniques.map(t => `- ${t}`).join("\n")
+    : "None";
+
+const complexityText =
+  patientComplexity.length > 0
+    ? patientComplexity.map(c => `- ${c}`).join("\n")
+    : "None";
+
+const careText =
+  perioperativeCare.length > 0
+    ? perioperativeCare.map(c => `- ${c}`).join("\n")
+    : "None";
 const prompt = `
 You are assisting a qualified surgeon in preparing an AI-generated DRAFT informed consent document.
 
@@ -86,6 +103,18 @@ ADDITIONAL INSTRUCTIONS FROM SURGEON
 
 ${instructions || "None"}
 
+SURGICAL TECHNIQUE
+
+${techniqueText}
+
+PATIENT COMPLEXITY
+
+${complexityText}
+
+PERIOPERATIVE & POSTOPERATIVE CARE
+
+${careText}
+
 Generate EXACTLY these sections in this order.
 
 1. Patient Information
@@ -105,9 +134,13 @@ Explain why this consent document is being provided.
 
 Explain the disease in simple language.
 
+If any Surgical Technique has been selected (for example Robotic Assisted Surgery, Minimally Invasive Surgery or Navigation Assisted Surgery), briefly explain how that technique relates to this procedure whenever appropriate.
+
 4. Purpose of Surgery
 
 Explain why the surgery is recommended.
+
+If a Surgical Technique has been selected, explain why that technique has been chosen and its intended advantages in simple language.
 
 5. Expected Benefits
 
@@ -115,28 +148,57 @@ Mention realistic expected benefits.
 
 Do not promise cure.
 
+If Robotic Assisted Surgery, Navigation Assisted Surgery or Minimally Invasive Surgery has been selected, include their expected benefits only when appropriate.
+
 6. Alternatives to Surgery
 
-Mention reasonable non-surgical and surgical alternatives when generally applicable.
+Mention reasonable non-surgical and surgical alternatives whenever generally applicable.
 
 7. Risks and Complications
 
 7.1 General Surgical Risks
 
+Mention common risks applicable to most surgical procedures.
+
+
+Mention the possibility of blood transfusion ONLY if
+"Blood Transfusion May Be Required"
+has been selected.
+
+Otherwise, simply mention bleeding as a general surgical risk without referring to transfusion.
+
 7.2 Procedure-Specific Risks
+
+Mention risks specific to the selected procedure.
+
+If Surgical Technique selections introduce additional considerations, explain them naturally.
 
 7.3 Patient-Specific Risks
 
 Only include patient-specific risks if explicitly provided.
 
+If Patient Complexity factors have been selected (for example High Risk Patient, Severe Deformity, Bone Loss, Infection, Morbid Obesity, Osteoporosis or Previous Surgery), explain how they may influence surgery, recovery or complication risk.
+
+If Perioperative Care selections such as Blood Transfusion, Drain, Tissue Biopsy or ICU Observation have been selected, include them only where appropriate.
+
 8. Recovery and Rehabilitation
 
 Describe:
-- Hospital stay
+
+- Expected hospital stay
 - Pain management
-- Physiotherapy
-- Walking
+- Physiotherapy (if selected or routinely required)
+- Walking and mobility
+- Walking aids such as walker or crutches (if selected)
+- Weight-bearing instructions when appropriate
 - Expected recovery period
+- Follow-up visits when appropriate
+
+If ICU Observation has been selected:
+
+- Mention it ONLY ONCE.
+- Include it under Recovery and Rehabilitation.
+- Do not repeat it under Patient-Specific Risks unless ICU admission itself is a direct patient-specific risk.
 
 9. Patient Declaration
 
@@ -163,6 +225,16 @@ State that:
 Write EXACTLY the following paragraph.
 
 This document is an AI-generated draft prepared as an educational and documentation aid. The final informed consent must be reviewed, modified if necessary, and approved by the treating surgeon before clinical use.
+
+IMPORTANT INSTRUCTIONS
+
+- Use the selected Surgical Technique, Patient Complexity and Perioperative & Postoperative Care throughout the document where relevant.
+- Integrate these selections naturally into the appropriate sections.
+- Do NOT create separate headings for these selections.
+- Do NOT simply list the selected options.
+- Mention only options that were selected.
+- Never mention options that were not selected.
+- Never invent information that was not provided.
 
 STYLE REQUIREMENTS
 
