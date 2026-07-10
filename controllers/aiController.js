@@ -247,11 +247,7 @@ STYLE REQUIREMENTS
 - Do not write "Here is your consent".
 - Start directly with section 1.
 `;
-console.log("====== LANGUAGE ======");
-console.log(language);
 
-console.log("====== PROMPT ======");
-console.log(prompt);
 console.log("Selected language:", language);
 const englishResult =
   await model.generateContent(

@@ -10,7 +10,8 @@ const cors = require("cors");
 
 const pool = require("./config/db");
 const authRoutes = require("./routes/authRoutes");
-
+const surgeonRoutes =
+require("./routes/surgeonRoutes");
 const app = express();
 const procedureRoutes =
 require(
@@ -60,6 +61,10 @@ app.use(
 app.use(
   "/api/dashboard",
   require("./routes/dashboardRoutes")
+);
+app.use(
+  "/api/surgeons",
+  surgeonRoutes
 );
 // Test Route
 app.get("/", (req, res) => {
